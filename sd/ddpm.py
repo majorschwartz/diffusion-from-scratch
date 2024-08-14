@@ -5,7 +5,7 @@ class DDPMSampler:
 	def __init__(self, generator: torch.Generator, num_training_steps=1000, beta_start: float = 0.00085, beta_end: float = 0.0120):
 		self.betas = torch.linspace(beta_start ** 0.5, beta_end ** 0.5, num_training_steps, dtype=torch.float32) ** 2
 		self.alphas = 1.0 - self.betas
-		self.alpha_cumprod = torch.cumprod(self.alphas, dim=0) # [alpha_0, alpha_0 * alpha_1, alpha_0 * alpha_1 * alpha_2, ...]
+		self.alphas_cumprod = torch.cumprod(self.alphas, dim=0) # [alpha_0, alpha_0 * alpha_1, alpha_0 * alpha_1 * alpha_2, ...]
 		self.one = torch.tensor(1.0)
 
 		self.generator = generator
@@ -48,8 +48,8 @@ class DDPMSampler:
 		t = timestep
 		prev_t = self._get_previous_timestep(t)
 
-		alpha_prod_t = self.alpha_cumprod[timestep]
-		alpha_prod_t_prev = self.alpha_cumprod[prev_t] if prev_t >= 0 else self.one
+		alpha_prod_t = self.alphas_cumprod[timestep]
+		alpha_prod_t_prev = self.alphas_cumprod[prev_t] if prev_t >= 0 else self.one
 		beta_prod_t = 1 - alpha_prod_t
 		beta_prod_t_prev = 1 - alpha_prod_t_prev
 		current_alpha_t = alpha_prod_t / alpha_prod_t_prev
@@ -76,16 +76,16 @@ class DDPMSampler:
 		return pred_prev_sample
 
 	def add_noise(self, original_samples: torch.FloatTensor, timesteps: torch.IntTensor) -> torch.FloatTensor:
-		alpha_cumprod = self.alpha_cumprod.to(device=original_samples.device, dtype=original_samples.dtype)
+		alphas_cumprod = self.alphas_cumprod.to(device=original_samples.device, dtype=original_samples.dtype)
 		timesteps = timesteps.to(device=original_samples.device)
 
-		sqrt_alpha_prod = alpha_cumprod[timesteps] ** 0.5
+		sqrt_alpha_prod = alphas_cumprod[timesteps] ** 0.5
 		sqrt_alpha_prod = sqrt_alpha_prod.flatten()
 
 		while len(sqrt_alpha_prod.shape) < len(original_samples.shape):
 			sqrt_alpha_prod = sqrt_alpha_prod.unsqueeze(-1)
 
-		sqrt_one_minus_alpha_prod = (1.0 - alpha_cumprod[timesteps]) ** 0.5 # standard dev
+		sqrt_one_minus_alpha_prod = (1.0 - alphas_cumprod[timesteps]) ** 0.5 # standard dev
 		sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.flatten()
 
 		while len(sqrt_one_minus_alpha_prod.shape) < len(original_samples.shape):

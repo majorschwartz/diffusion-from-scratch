@@ -28,9 +28,9 @@ def generate(
 		if not (0 < strength <= 1):
 			raise ValueError("strength must be in (0, 1]")
 		if idle_device:
-			to_idle: lambda x: x.to(idle_device)
+			to_idle = lambda x: x.to(idle_device)
 		else:
-			to_idle: lambda x: x
+			to_idle = lambda x: x
 		
 		generator = torch.Generator(device=device)
 		if seed is None:
@@ -116,7 +116,7 @@ def generate(
 				model_input = model_input.repeat(2, 1, 1, 1)
 			
 			# model_output is predicted noise by the UNet
-			model_output = diffusion(model_input, time_embedding)
+			model_output = diffusion(model_input, context, time_embedding)
 
 			if do_cfg:
 				output_cond, output_uncond = model_output.chunk(2)
