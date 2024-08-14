@@ -51,7 +51,7 @@ class CLIP(nn.Module):
 		self.embedding = CLIPEmbedding(49408, 768, 77)
 
 		self.layers = nn.Module([
-			CLIPLayer(12, 768) for i in range(12)
+			CLIPLayer(12, 768) for _ in range(12)
 		])
 
 		self.layernorm = nn.LayerNorm(768)
